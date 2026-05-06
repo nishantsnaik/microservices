@@ -13,6 +13,7 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>loans</name>
     <description>Microservice for Loans</description>
+    <packaging>jar</packaging>
     <url/>
     <licenses>
         <license/>
@@ -112,6 +113,9 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <image>
+                        <name>nishantsnaik/${project.artifactId}:s2</name>
+                    </image>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
