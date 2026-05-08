@@ -1,0 +1,339 @@
+# Spring Cloud Config Implementation
+
+This document covers the implementation of Spring Cloud Config server and client configuration management in our microservices architecture.
+
+## Architecture Overview
+
+### Project Structure
+```
+v2-spring-cloud-config/
+├── configserver/           # Spring Cloud Config Server
+├── accounts/              # Accounts Microservice (Config Client)
+├── cards/                 # Cards Microservice (Config Client)
+└── loans/                 # Loans Microservice (Config Client)
+```
+
+### Configuration Flow
+```
+Config Server (Port 8071)
+    ↓
+Centralized Configuration Store
+    ↓
+Microservice Clients (Accounts, Cards, Loans)
+```
+
+## Spring Cloud Config Server
+
+### Setup Configuration
+
+#### Main Application Class
+```java
+@SpringBootApplication
+@EnableConfigServer
+public class ConfigserverApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(ConfigserverApplication.class, args);
+    }
+}
+```
+
+#### Server Configuration (application.yml)
+```yaml
+spring:
+  application:
+    name: "configserver"
+  profiles:
+    active: native
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: classpath:/config
+
+server:
+  port: 8071
+```
+
+### Configuration Files Structure
+
+#### Service-Specific Configurations
+- `accounts.yml` - Default accounts configuration
+- `accounts_prod.yml` - Production accounts configuration  
+- `accounts_qa.yml` - QA accounts configuration
+
+- `cards.yml` - Default cards configuration
+- `cards_prod.yml` - Production cards configuration
+- `cards_qa.yml` - QA cards configuration
+
+- `loans.yml` - Default loans configuration
+- `loans_prod.yml` - Production loans configuration
+- `loans_qa.yml` - QA loans configuration
+
+#### Example Configuration (accounts.yml)
+```yaml
+build:
+  version: "3.0"
+
+accounts:
+  message: "Welcome to VyberCoders accounts related local APIs"
+  contactDetails:
+    name: "John Doe - Developer"
+    email: "john@VyberCoders.com"
+  onCallSupport:
+    - (555) 555-1234
+    - (555) 523-1345
+```
+
+#### Environment-Specific Configuration (accounts_prod.yml)
+```yaml
+build:
+  version: "1.0"
+
+accounts:
+  message: "Welcome to VyberCoders accounts related prod APIs"
+  contactDetails:
+    name: "Reine Aishwarya - Product Owner"
+    email: "aishwarya@VyberCoders.com"
+  onCallSupport:
+    - (453) 392-4829
+    - (236) 203-0384
+```
+
+## Microservice Client Configuration
+
+### Dependencies Added
+
+#### Maven Dependencies
+```xml
+<properties>
+    <spring-cloud.version>2025.1.1</spring-cloud.version>
+</properties>
+
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-config</artifactId>
+    </dependency>
+</dependencies>
+
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-dependencies</artifactId>
+            <version>${spring-cloud.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+```
+
+### Client Configuration (application.yml)
+
+#### Accounts Service
+```yaml
+server:
+  port: 8081
+
+spring:
+  application:
+    name: "accounts"
+  profiles:
+    active: "prod"
+  config:
+    import: "optional:configserver:http://localhost:8071"
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password: ''
+  h2:
+    console:
+      enabled: true
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+      show-sql: true
+```
+
+#### Cards Service
+```yaml
+server:
+  port: 9000
+
+spring:
+  application:
+    name: "cards"
+  profiles:
+    active: "prod"
+  config:
+    import: "optional:configserver:http://localhost:8071"
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password: ''
+  h2:
+    console:
+      enabled: true
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+      show-sql: true
+```
+
+#### Loans Service
+```yaml
+server:
+  port: 8090
+
+spring:
+  application:
+    name: "loans"
+  profiles:
+    active: "prod"
+  config:
+    import: "optional:configserver:http://localhost:8071"
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password: ''
+  h2:
+    console:
+      enabled: true
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+      show-sql: true
+```
+
+## Configuration Loading Strategy
+
+### Priority Order
+1. **Local application.yml** - Service-specific configuration
+2. **Config Server** - Centralized configuration
+3. **Environment-specific configs** - Profile-based overrides
+
+### Configuration Resolution
+```
+Service Name + Profile = Configuration File
+Example:
+- accounts + prod = accounts_prod.yml
+- cards + qa = cards_qa.yml
+- loans + default = loans.yml
+```
+
+## Configuration Management Benefits
+
+### 1. Centralized Configuration
+- Single source of truth for all microservices
+- Consistent configuration across environments
+- Easy to manage and update configurations
+
+### 2. Environment-Specific Overrides
+- Separate configurations for dev/qa/prod
+- Profile-based configuration loading
+- Dynamic configuration updates
+
+### 3. Configuration Hot Reload
+- Changes in config server are automatically reflected
+- No need to restart services for configuration changes
+- Real-time configuration updates
+
+### 4. Configuration Security
+- Sensitive data can be encrypted
+- Access control to configuration server
+- Audit trail for configuration changes
+
+## Startup Sequence
+
+### 1. Config Server Startup
+```bash
+cd configserver
+mvn spring-boot:run
+```
+- Starts on port 8071
+- Loads configuration files from classpath:/config
+- Exposes configuration endpoints
+
+### 2. Microservice Startup
+```bash
+cd accounts
+mvn spring-boot:run
+```
+- Connects to config server at localhost:8071
+- Loads configuration based on service name and profile
+- Fails gracefully if config server is unavailable (optional: prefix)
+
+## Configuration Endpoints
+
+### Config Server Endpoints
+- `http://localhost:8071/accounts/default` - Default accounts config
+- `http://localhost:8071/accounts/prod` - Production accounts config
+- `http://localhost:8071/cards/qa` - QA cards config
+- `http://localhost:8071/loans/prod` - Production loans config
+
+## Best Practices
+
+### 1. Configuration Organization
+- Keep common configurations in base files
+- Use profiles for environment-specific settings
+- Group related properties under prefixes
+
+### 2. Configuration Security
+- Never store sensitive data in plain text
+- Use encryption for passwords and API keys
+- Implement proper access controls
+
+### 3. Configuration Validation
+- Use @ConfigurationProperties with validation
+- Implement configuration health checks
+- Test configuration loading in all environments
+
+### 4. Configuration Versioning
+- Version configuration files
+- Maintain backward compatibility
+- Document configuration changes
+
+## Migration from Local Configuration
+
+### Before (v1-springboot)
+- Configuration files in each service
+- Profile-specific files in service resources
+- Local configuration management
+
+### After (v2-spring-cloud-config)
+- Centralized configuration server
+- Service-specific configurations in config server
+- Dynamic configuration management
+
+## Troubleshooting
+
+### Common Issues
+1. **Config Server Connection Failed**
+   - Check config server is running on port 8071
+   - Verify network connectivity
+   - Check firewall settings
+
+2. **Configuration Not Loading**
+   - Verify service name matches configuration file name
+   - Check profile activation
+   - Review config server logs
+
+3. **Configuration Priority Issues**
+   - Understand configuration loading order
+   - Check for local configuration overrides
+   - Review bootstrap vs application configuration
+
+### Debug Configuration
+```yaml
+logging:
+  level:
+    org.springframework.cloud.config: DEBUG
+    org.springframework.boot.context.config: DEBUG
+```
