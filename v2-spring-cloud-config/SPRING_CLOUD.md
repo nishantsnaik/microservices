@@ -337,3 +337,265 @@ logging:
     org.springframework.cloud.config: DEBUG
     org.springframework.boot.context.config: DEBUG
 ```
+
+## Spring Cloud Bus Implementation
+
+### Overview
+Spring Cloud Bus provides a messaging layer for broadcasting configuration changes across all connected microservices using RabbitMQ.
+
+### Architecture
+```
+Config Server
+    ↓ (broadcasts changes via RabbitMQ)
+Spring Cloud Bus (RabbitMQ)
+    ↓ (pushes updates to all clients)
+Microservice Clients (Accounts, Cards, Loans)
+```
+
+### Dependencies Added
+
+#### Config Server Dependencies
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-bus-amqp</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-config-monitor</artifactId>
+</dependency>
+```
+
+#### Client Dependencies (Accounts, Cards, Loans)
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-bus-amqp</artifactId>
+</dependency>
+```
+
+### Configuration Updates
+
+#### Config Server (application.yml)
+```yaml
+spring:
+  application:
+    name: "configserver"
+  profiles:
+    active: git
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/nishantsnaik/vybercoders-config.git
+          default-label: main
+          timeout: 5
+          clone-on-start: true
+          force-pull: true
+  rabbitmq:
+    host: "localhost"
+    port: 5672
+    username: "guest"
+    password: "guest"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+encrypt:
+  key: "ef124b53bd7ad5d8af4702b7f2a3ce1c2d30fd06122705ab2a3ff23348d0e1f9"
+
+server:
+  port: 8071
+```
+
+#### Client Configuration (application.yml)
+```yaml
+spring:
+  application:
+    name: "accounts"  # or "cards", "loans"
+  profiles:
+    active: "prod"
+  config:
+    import: "optional:configserver:http://localhost:8071"
+  rabbitmq:
+    host: "localhost"
+    port: 5672
+    username: "guest"
+    password: "guest"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+```
+
+### Configuration Properties Updates
+
+#### DTO Classes (Updated from Records to Classes)
+```java
+@ConfigurationProperties(prefix = "accounts")
+@Getter @Setter
+public class AccountsContactInfoDto {
+    String message;
+    Map<String, String> contactDetails;
+    List<String> onCallSupport;
+}
+```
+
+#### Enable Configuration Properties
+```java
+@SpringBootApplication
+@EnableConfigurationProperties(value = {AccountsContactInfoDto.class})
+@EnableJpaAuditing(auditorAwareRef = "auditAwareImpl")
+public class AccountsApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(AccountsApplication.class, args);
+    }
+}
+```
+
+### Endpoints Added
+
+All services now expose:
+- `/api/build-info` - Build version from config
+- `/api/java-version` - Java version details
+- `/api/contact-info` - Contact information from config
+- `/actuator/busrefresh` - Trigger configuration refresh
+- `/actuator/env` - Environment properties
+- `/actuator/configprops` - Configuration properties
+
+### Spring Cloud Bus Features
+
+#### 1. Configuration Broadcasting
+- Changes in config server automatically broadcast to all clients
+- No need to restart services for configuration updates
+- Real-time configuration synchronization
+
+#### 2. Refresh Endpoint
+```bash
+# Refresh all services
+curl -X POST http://localhost:8071/actuator/busrefresh
+
+# Refresh specific service
+curl -X POST http://localhost:8081/actuator/refresh
+```
+
+#### 3. Monitoring and Management
+- All actuator endpoints exposed for monitoring
+- Health checks for RabbitMQ connectivity
+- Configuration change tracking
+
+### RabbitMQ Setup
+
+#### Docker Configuration
+```bash
+# Run RabbitMQ with port mapping
+docker run -d --name some-rabbit \
+  -p 5672:5672 -p 15672:15672 -p 25672:25672 \
+  rabbitmq:3
+```
+
+#### Connection Details
+- **Host**: localhost
+- **Port**: 5672
+- **Username**: guest
+- **Password**: guest
+- **Management UI**: http://localhost:15672
+
+### Configuration Refresh Workflow
+
+#### Manual Refresh
+1. Update configuration in Git repository
+2. Trigger refresh: `curl -X POST http://localhost:8071/actuator/busrefresh`
+3. All connected services receive updated configuration
+4. Services reload @ConfigurationProperties beans
+
+#### Automatic Refresh (with Webhooks)
+1. Git webhook triggers config server refresh
+2. Config server broadcasts changes via RabbitMQ
+3. All connected services automatically update
+
+### Benefits of Spring Cloud Bus
+
+#### 1. Centralized Configuration Management
+- Single source of truth in Git
+- Automatic distribution to all services
+- Version-controlled configuration history
+
+#### 2. Dynamic Configuration Updates
+- No service restarts required
+- Real-time configuration changes
+- Zero-downtime configuration updates
+
+#### 3. Monitoring and Observability
+- Configuration change tracking
+- Health monitoring
+- Comprehensive actuator endpoints
+
+#### 4. Scalability
+- Supports unlimited number of services
+- Efficient message broadcasting
+- Fault-tolerant message delivery
+
+### Troubleshooting Spring Cloud Bus
+
+#### Common Issues
+
+1. **RabbitMQ Connection Failed**
+   ```bash
+   # Check RabbitMQ status
+   docker ps | grep rabbitmq
+   
+   # Test connectivity
+   telnet localhost 5672
+   ```
+
+2. **Configuration Not Refreshing**
+   ```bash
+   # Check bus refresh endpoint
+   curl -X POST http://localhost:8071/actuator/busrefresh
+   
+   # Verify service logs for refresh events
+   ```
+
+3. **@ConfigurationProperties Not Updating**
+   - Ensure @RefreshScope annotation on beans
+   - Check that beans are not final
+   - Verify proper dependency injection
+
+#### Debug Configuration
+```yaml
+logging:
+  level:
+    org.springframework.cloud.bus: DEBUG
+    org.springframework.amqp: DEBUG
+    org.springframework.cloud.config: DEBUG
+```
+
+### Best Practices
+
+#### 1. Configuration Organization
+- Keep configurations in Git repository
+- Use meaningful branch names for environments
+- Document configuration changes
+
+#### 2. Security Considerations
+- Use encryption for sensitive data
+- Secure RabbitMQ connections in production
+- Implement proper access controls
+
+#### 3. Performance Optimization
+- Use @RefreshScope judiciously
+- Monitor RabbitMQ queue sizes
+- Implement proper error handling
+
+#### 4. Production Readiness
+- Set up proper monitoring
+- Implement circuit breakers
+- Plan for RabbitMQ high availability
+
+This Spring Cloud Bus implementation provides a robust, scalable solution for dynamic configuration management across all microservices in the system.

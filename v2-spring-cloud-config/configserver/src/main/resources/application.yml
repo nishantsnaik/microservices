@@ -2,12 +2,34 @@ spring:
   application:
     name: "configserver"
   profiles:
-    active: native
+    #active: native  #only for local
+    active: git
+
   cloud:
     config:
       server:
-        native:
-          search-locations: classpath:/config
+        #native:
+          #search-locations: classpath:/config
+        git:
+          uri: https://github.com/nishantsnaik/vybercoders-config.git
+          default-label: main
+          timeout: 5
+          clone-on-start: true
+          force-pull: true
+  rabbitmq:
+    host: "localhost"
+    port: 5672
+    username: "guest"
+    password: "guest"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+encrypt:
+  key: "ef124b53bd7ad5d8af4702b7f2a3ce1c2d30fd06122705ab2a3ff23348d0e1f9"
 
 server:
   port: 8071
