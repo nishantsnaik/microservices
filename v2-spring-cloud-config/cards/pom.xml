@@ -147,6 +147,10 @@
                 <artifactId>jib-maven-plugin</artifactId>
                 <version>3.5.1</version>
                 <configuration>
+                    <from>
+                        <!-- Amazon Corretto 25 su Alpine è la scelta più affidabile per Java 25 -->
+                        <image>amazoncorretto:25</image>
+                    </from>
                     <to>
                         <image>nishantsnaik/${project.artifactId}:s2</image>
                     </to>

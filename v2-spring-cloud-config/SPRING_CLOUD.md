@@ -599,3 +599,240 @@ logging:
 - Plan for RabbitMQ high availability
 
 This Spring Cloud Bus implementation provides a robust, scalable solution for dynamic configuration management across all microservices in the system.
+
+## Containerization with Docker and JIB
+
+### Container Image Configuration
+
+All microservices have been containerized using Google JIB (Java Image Builder) for efficient, secure Docker image creation. The containerization strategy uses Amazon Corretto 25 as the base JVM for optimal performance and security.
+
+#### JIB Maven Plugin Configuration
+```xml
+<plugin>
+    <groupId>com.google.cloud.tools</groupId>
+    <artifactId>jib-maven-plugin</artifactId>
+    <version>3.5.1</version>
+    <configuration>
+        <from>
+            <!-- Amazon Corretto 25 su Alpine è la scelta più affidabile per Java 25 -->
+            <image>amazoncorretto:25</image>
+        </from>
+        <to>
+            <image>nishantsnaik/${project.artifactId}:s2</image>
+        </to>
+    </configuration>
+</plugin>
+```
+
+### Docker Compose Configuration
+
+Multi-environment Docker Compose configurations have been implemented for different deployment stages:
+
+#### Environment-Specific Configurations
+- `docker-compose/default/` - Development environment
+- `docker-compose/qa/` - QA/testing environment  
+- `docker-compose/prod/` - Production environment
+
+#### Production Docker Compose Configuration
+```yaml
+services:
+  rabbit:
+    image: rabbitmq:4-management
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  configserver:
+    image: "nishantsnaik/configserver:s2"
+    container_name: configserver-ms
+    ports:
+      - "8071:8071"
+    depends_on:
+      rabbit:
+        condition: service_healthy
+    healthcheck:
+      test: "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  accounts:
+    image: "nishantsnaik/accounts:s2"
+    container_name: accounts-ms
+    ports:
+      - "8081:8081"
+    depends_on:
+      configserver:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: "accounts"
+```
+
+### Container Health Checks
+
+#### Health Check Implementation
+Each service implements health checks using Spring Boot Actuator endpoints:
+
+- **Config Server**: `/actuator/health/readiness`
+- **Microservices**: Dependency-based health checks
+- **RabbitMQ**: Built-in diagnostics
+
+#### Health Check Command
+```bash
+curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1
+```
+
+### Container Startup Sequence
+
+#### Dependency Management
+Services are configured with proper dependency chains:
+1. **RabbitMQ** starts first (no dependencies)
+2. **Config Server** starts after RabbitMQ is healthy
+3. **Microservices** (Accounts, Cards, Loans) start after Config Server is healthy
+
+#### Service Dependencies
+```yaml
+depends_on:
+  configserver:
+    condition: service_healthy
+```
+
+### Container Network Configuration
+
+#### Common Configuration (common-config.yml)
+```yaml
+services:
+  network-deploy-service:
+    networks:
+      - vybercoders
+
+  microservice-base-config:
+    extends:
+      service: network-deploy-service
+    deploy:
+      resources:
+        limits:
+          memory: 700m
+    environment:
+      SPRING_RABBITMQ_HOST: "rabbit"
+
+  microservice-configserver-config:
+    extends:
+      service: microservice-base-config
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_CONFIG_IMPORT: configserver:http://configserver:8071/
+```
+
+### Container Deployment Commands
+
+#### Build and Deploy
+```bash
+# Build all Docker images using JIB
+mvn clean compile jib:build -DskipTests
+
+# Deploy to production
+docker-compose -f docker-compose/prod/docker-compose.yml up -d
+
+# Check container status
+docker-compose -f docker-compose/prod/docker-compose.yml ps
+
+# View logs
+docker-compose -f docker-compose/prod/docker-compose.yml logs -f configserver
+```
+
+#### Environment-Specific Deployment
+```bash
+# Development
+docker-compose -f docker-compose/default/docker-compose.yml up -d
+
+# QA
+docker-compose -f docker-compose/qa/docker-compose.yml up -d
+
+# Production
+docker-compose -f docker-compose/prod/docker-compose.yml up -d
+```
+
+### Container Troubleshooting
+
+#### Common Container Issues
+
+1. **Health Check Failures**
+   ```bash
+   # Check container health
+   docker ps
+   
+   # Inspect health check logs
+   docker inspect configserver-ms | grep Health -A 10
+   
+   # Test health endpoint manually
+   docker exec configserver-ms curl --fail --silent localhost:8071/actuator/health/readiness
+   ```
+
+2. **Dependency Issues**
+   ```bash
+   # Check dependency status
+   docker-compose -f docker-compose/prod/docker-compose.yml ps
+   
+   # Restart specific service
+   docker-compose -f docker-compose/prod/docker-compose.yml restart configserver
+   ```
+
+3. **Network Connectivity**
+   ```bash
+   # Test service connectivity
+   docker exec accounts-ms curl http://configserver:8071/accounts/prod
+   
+   # Check network configuration
+   docker network ls
+   docker network inspect microservices_vybercoders
+   ```
+
+### Container Benefits
+
+#### 1. Consistency Across Environments
+- Same container images run in all environments
+- Eliminates "it works on my machine" issues
+- Immutable infrastructure
+
+#### 2. Resource Efficiency
+- Optimized container layers with JIB
+- Amazon Corretto 25 for better performance
+- Memory limits enforced via Docker Compose
+
+#### 3. Scalability
+- Easy horizontal scaling with Docker Swarm/Kubernetes
+- Service discovery through container networking
+- Load balancer integration ready
+
+#### 4. Operational Excellence
+- Health checks for automatic failover
+- Dependency management for proper startup order
+- Centralized logging and monitoring
+
+### Container Security Considerations
+
+#### 1. Base Image Security
+- Amazon Corretto 25 provides regular security updates
+- Minimal attack surface with Alpine-based images
+- No package managers in final containers
+
+#### 2. Runtime Security
+- Non-root user execution where possible
+- Resource limits to prevent DoS attacks
+- Network isolation between services
+
+#### 3. Configuration Security
+- Sensitive data injected via environment variables
+- No hardcoded credentials in images
+- Encrypted configuration support via Spring Cloud Config
+
+This containerization strategy provides a production-ready, scalable deployment solution for the Spring Cloud microservices architecture.
