@@ -1,30 +1,31 @@
 services:
-  rabbit:
-    image: rabbitmq:4-management
-    hostname: rabbitmq
+  eurekaserver:
+    image: "nishantsnaik/eurekaserver:s2"
+    container_name: eurekaserver-ms
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "8070:8070"
+    depends_on:
+      configserver:
+        condition: service_healthy
     healthcheck:
-      test: rabbitmq-diagnostics check_port_connectivity
+      test: "curl --fail --silent localhost:8070/actuator/health/readiness | grep UP || exit 1"
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 5s
+      start_period: 10s
     extends:
       file: common-config.yml
-      service: network-deploy-service
+      service: microservice-configserver-config
+    environment:
+      SPRING_APPLICATION_NAME: "eurekaserver"
 
   configserver:
     image: "nishantsnaik/configserver:s2"
     container_name: configserver-ms
     ports:
       - "8071:8071"
-    depends_on:
-      rabbit:
-        condition: service_healthy
     healthcheck:
-      test: "curl --fail localhost:8071/actuator/health/readiness | grep UP || exit 1"
+      test: "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1"
       interval: 10s
       timeout: 5s
       retries: 10
@@ -41,11 +42,13 @@ services:
     depends_on:
       configserver:
         condition: service_healthy
+      eurekaserver:
+        condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: "accounts"
     extends:
       file: common-config.yml
-      service: microservice-configserver-config
+      service: microservice-eureka-config
 
   loans:
     image: "nishantsnaik/loans:s2"
@@ -55,11 +58,13 @@ services:
     depends_on:
       configserver:
         condition: service_healthy
+      eurekaserver:
+        condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: "loans"
     extends:
       file: common-config.yml
-      service: microservice-configserver-config
+      service: microservice-eureka-config
 
   cards:
     image: "nishantsnaik/cards:s2"
@@ -69,11 +74,13 @@ services:
     depends_on:
       configserver:
         condition: service_healthy
+      eurekaserver:
+        condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: "cards"
     extends:
       file: common-config.yml
-      service: microservice-configserver-config
+      service: microservice-eureka-config
 
 networks:
   vybercoders:
