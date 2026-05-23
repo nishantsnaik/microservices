@@ -29,8 +29,17 @@ management:
   endpoint:
     shutdown:
       access: unrestricted
+    health:
+      probes:
+        enabled: true
+
   info:
     env:
+      enabled: true
+  health:
+    readiness-state:
+      enabled: true
+    liveness-state:
       enabled: true
 
 eureka:
@@ -47,3 +56,10 @@ info:
     name: "loans"
     description: "Microservice for Loans"
     version: "1.0.0"
+
+
+logging:
+  level:
+    com:
+      vybercoders:
+        loans: DEBUG

@@ -30,8 +30,17 @@ management:
   endpoint:
     shutdown:
       access: unrestricted
+    health:
+      probes:
+        enabled: true
+
   info:
     env:
+      enabled: true
+  health:
+    readiness-state:
+      enabled: true
+    liveness-state:
       enabled: true
 
 eureka:
@@ -48,3 +57,9 @@ info:
     name: "accounts"
     description: "Microservice for Accounts"
     version: "1.0.0"
+
+logging:
+  level:
+    com:
+      vybercoders:
+          accounts: DEBUG

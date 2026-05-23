@@ -1,11 +1,12 @@
 spring:
   application:
     name: eurekaserver
-
+  ## this may be needed to run locally
+  #config:
+  #  import: configserver:http://configserver:8071
 
 server:
   port: 8761
-
 
 management:
   endpoints:
