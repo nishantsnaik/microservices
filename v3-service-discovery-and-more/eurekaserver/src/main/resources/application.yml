@@ -1,9 +1,9 @@
 spring:
   application:
     name: eurekaserver
-  ## this may be needed to run locally
+  ### only for local
   #config:
-  #  import: configserver:http://configserver:8071
+  #  import: "optional:configserver:http://localhost:8071"
 
 server:
   port: 8761
