@@ -21,7 +21,7 @@ public class AccountsDto {
 
     @NotEmpty(message = "AccountType can not be a null or empty")
     @Schema(
-            description = "Account type of Eazy Bank account", example = "Savings"
+            description = "Account type of Vyber Coder account", example = "Savings"
     )
     private String accountType;
 

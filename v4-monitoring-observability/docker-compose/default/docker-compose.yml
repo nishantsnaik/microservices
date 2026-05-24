@@ -12,7 +12,7 @@ services:
       service: network-deploy-service
 
   configserver:
-    image: "nishantsnaik/configserver:s2"
+    image: "nishantsnaik/configserver:s11"
     container_name: configserver-ms
     ports:
       - "8071:8071"
@@ -27,7 +27,7 @@ services:
       service: microservice-base-config
 
   eurekaserver:
-    image: "nishantsnaik/eurekaserver:s2"
+    image: "nishantsnaik/eurekaserver:s11"
     container_name: eurekaserver-ms
     ports:
       - "8070:8070"
@@ -47,7 +47,7 @@ services:
       SPRING_APPLICATION_NAME: "eurekaserver"
 
   accounts:
-    image: "nishantsnaik/accounts:s2"
+    image: "nishantsnaik/accounts:s11"
     container_name: accounts-ms
     ports:
       - "8081:8081"
@@ -69,7 +69,7 @@ services:
       service: microservice-eureka-config
 
   loans:
-    image: "nishantsnaik/loans:s2"
+    image: "nishantsnaik/loans:s11"
     container_name: loans-ms
     ports:
       - "8090:8090"
@@ -91,7 +91,7 @@ services:
       service: microservice-eureka-config
 
   cards:
-    image: "nishantsnaik/cards:s2"
+    image: "nishantsnaik/cards:s11"
     container_name: cards-ms
     ports:
       - "9000:9000"
@@ -114,7 +114,7 @@ services:
 
 
   gatewayserver:
-    image: "nishantsnaik/gatewayserver:s2"
+    image: "nishantsnaik/gatewayserver:s11"
     container_name: gatewayserver-ms
     ports:
       - "8072:8072"
