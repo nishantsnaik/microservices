@@ -107,8 +107,10 @@ public class LoansController {
                                                      @RequestParam
                                                                @Pattern(regexp="(^$|[0-9]{10})",message = "Mobile number must be 10 digits")
                                                                String mobileNumber) {
-        logger.debug("vybercoders-correlation-id found: {} ", correlationId);
+        //logger.debug("vybercoders-correlation-id found: {} ", correlationId);
+        logger.debug("fetchLoanDetails method called");
         LoansDto loansDto = iLoansService.fetchLoan(mobileNumber);
+        logger.debug("fetchLoanDetails method end");
         return ResponseEntity.status(HttpStatus.OK).body(loansDto);
     }
 
