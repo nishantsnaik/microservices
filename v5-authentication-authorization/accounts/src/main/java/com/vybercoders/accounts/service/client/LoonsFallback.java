@@ -1,0 +1,13 @@
+package com.vybercoders.accounts.service.client;
+
+import com.vybercoders.accounts.dto.LoansDto;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+
+@Component
+public class LoonsFallback implements LoansFeignClient{
+    @Override
+    public ResponseEntity<LoansDto> fetchLoanDetails(String correlationId, String mobileNumber) {
+        return null;
+    }
+}
