@@ -645,7 +645,7 @@ services:
     healthcheck:
       test: rabbitmq-diagnostics check_port_connectivity
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 10
       start_period: 5s
 
@@ -660,7 +660,7 @@ services:
     healthcheck:
       test: "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1"
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 10
       start_period: 10s
 

@@ -56,6 +56,9 @@ info:
     name: "cards"
     description: "Microservice for Cards"
     version: "1.0.0"
+metrics:
+  tags:
+    application: ${spring.application.name}
 
 
 logging:
@@ -63,3 +66,5 @@ logging:
     com:
       vybercoders:
         cards: DEBUG
+  pattern:
+    console: "%5p [${spring.application.name},%X{traceId},%X{spanId},%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] %-5level %logger{36} - %msg%n"

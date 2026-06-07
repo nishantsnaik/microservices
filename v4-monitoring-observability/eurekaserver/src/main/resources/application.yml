@@ -22,3 +22,10 @@ management:
       health:
         probes:
           enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+logging:
+  pattern:
+    console: "%5p [${spring.application.name},%X{traceId},%X{spanId},%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] %-5level %logger{36} - %msg%n"

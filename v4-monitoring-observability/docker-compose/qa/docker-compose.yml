@@ -19,7 +19,7 @@ services:
     healthcheck:
       test: "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1"
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 10
       start_period: 10s
     extends:
@@ -37,7 +37,7 @@ services:
     healthcheck:
       test: "curl --fail --silent localhost:8070/actuator/health/readiness | grep UP || exit 1"
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 10
       start_period: 10s
     extends:
@@ -54,7 +54,7 @@ services:
     healthcheck:
       test: "curl --fail --silent localhost:8081/actuator/health/readiness | grep UP || exit 1"
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 10
       start_period: 10s
     depends_on:
@@ -76,7 +76,7 @@ services:
     healthcheck:
       test: "curl --fail --silent localhost:8090/actuator/health/readiness | grep UP || exit 1"
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 10
       start_period: 10s
     depends_on:
@@ -98,7 +98,7 @@ services:
     healthcheck:
       test: "curl --fail --silent localhost:9000/actuator/health/readiness | grep UP || exit 1"
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 10
       start_period: 10s
     depends_on:

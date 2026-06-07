@@ -36,6 +36,9 @@ management:
   info:
     env:
       enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
   health:
     readiness-state:
       enabled: true
@@ -63,3 +66,5 @@ logging:
     com:
       vybercoders:
         loans: DEBUG
+  pattern:
+    console: "%5p [${spring.application.name},%X{traceId},%X{spanId},%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] %-5level %logger{36} - %msg%n"

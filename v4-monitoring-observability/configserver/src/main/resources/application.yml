@@ -31,6 +31,13 @@ management:
       health:
         probes:
           enabled: true
+    metrics:
+      tags:
+        application: ${spring.application.name}
+
+logging:
+  pattern:
+    console: "%5p [${spring.application.name},%X{traceId},%X{spanId},%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] %-5level %logger{36} - %msg%n"
 
 encrypt:
   key: "ef124b53bd7ad5d8af4702b7f2a3ce1c2d30fd06122705ab2a3ff23348d0e1f9"

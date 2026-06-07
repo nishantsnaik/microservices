@@ -32,6 +32,9 @@ management:
   info:
     env:
       enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
 
 info:
   app:
@@ -44,6 +47,9 @@ logging:
     com:
       vybercoders:
         gatewayserver: DEBUG
+  pattern:
+    console: "%5p [${spring.application.name},%X{traceId},%X{spanId},%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] %-5level %logger{36} - %msg%n"
+
 
 resilience4j.circuitbreaker:
   configs:
