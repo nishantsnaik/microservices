@@ -93,6 +93,14 @@
             <version>2.8.0</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-stream</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-stream-binder-rabbit</artifactId>
+        </dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -129,7 +137,7 @@
                         <image>amazoncorretto:25</image>
                     </from>
                     <to>
-                        <image>nishantsnaik/${project.artifactId}:s12</image>
+                        <image>nishantsnaik/${project.artifactId}:s13</image>
                     </to>
                 </configuration>
             </plugin>
